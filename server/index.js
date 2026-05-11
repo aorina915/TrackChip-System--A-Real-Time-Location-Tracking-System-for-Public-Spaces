@@ -274,9 +274,13 @@ const createDefaultEntities = async () => {
     try {
       const userResult = await pool.query('SELECT id FROM users WHERE username = $1', ['demo']);
       if (userResult.rows.length === 0) {
-        const newUser = await pool.query(
+        // NOTE: Demo user must be created with a strong hashed password in production
+      // For development, use: npm run seed-demo or manually create via /auth/register
+      // NEVER commit plaintext passwords to version control
+      const demoHash = await bcrypt.hash(process.env.DEMO_PASSWORD || 'demo_change_me_123', 10);
+      const newUser = await pool.query(
           'INSERT INTO users (username, password_hash, role) VALUES ($1, $2, $3) RETURNING id',
-          ['demo', 'demo123', 'client']
+          ['demo', demoHash, 'client']
         );
         demoUserId = newUser.rows[0].id;
       } else {
@@ -434,11 +438,12 @@ const startEntityMovement = () => {
 };
 
 // ---------------------------------------------------------------------------
-// In-memory fallback
+// In-memory fallback (DEPRECATED - Use database users only)
 // ---------------------------------------------------------------------------
+// NOTE: In-memory users are for development only. Do NOT use in production.
+// All users must be managed through the database with bcrypt-hashed passwords.
 const users = [
-  { id: 1, username: 'admin', password: 'admin123', role: 'admin' },
-  { id: 2, username: 'operator', password: 'operator123', role: 'operator' },
+  // REMOVED: Hardcoded credentials were a security risk. Use .env and database instead.
 ];
 
 // ---------------------------------------------------------------------------
